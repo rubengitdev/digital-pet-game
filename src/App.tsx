@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 // Define corresponding data types
@@ -52,6 +52,7 @@ const getPetMood = (pet: Pet): PetMood => {
 };
 
 const PetGame = () => {
+    const inputRef = useRef<HTMLInputElement>(null);
     const [petName, setPetName] = useState('');
     const [gameStarted, setGameStarted] = useState(false);
     const [pet, setPet] = useState<Pet>({
@@ -61,17 +62,39 @@ const PetGame = () => {
         energy: 100,
     });
 
+    useEffect(() => {
+        let timeoutId: number;
+
+        const tick = () => {
+            setPet((currentPet) => ({
+                ...currentPet,
+                hunger: Math.min(100, currentPet.hunger + 1),
+                energy: Math.min(100, currentPet.energy + 1),
+                happiness: Math.max(0, currentPet.happiness - 1),
+            }));
+            timeoutId = window.setTimeout(tick, 1000);
+        };
+
+        timeoutId = window.setTimeout(tick, 1000);
+
+        return () => clearTimeout(timeoutId);
+    }, []);
+
     const handleStartGame = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        if (petName.trim() === '') {
+        const nameFromInput = inputRef.current?.value.trim() ?? '';
+
+        if (nameFromInput === '') {
             return;
         }
 
-        setPet({
-            ...pet,
-            name: petName,
-        });
+        setPetName(nameFromInput);
+
+        setPet((currentPet) => ({
+            ...currentPet,
+            name: nameFromInput,
+        }));
 
         setGameStarted(true);
     };
@@ -139,10 +162,13 @@ const PetGame = () => {
                             <input
                                 type="text"
                                 id="pet-name"
-                                value={petName}
+                                ref={inputRef}
+                                defaultValue={petName}
                                 onChange={(e) => setPetName(e.target.value)}
                             />
-                            <button id="set-name-btn">Start Game</button>
+                            <button id="set-name-btn" type="submit">
+                                Start Game
+                            </button>
                         </form>
                     </section>
                 ) : (
@@ -171,18 +197,47 @@ const PetGame = () => {
                                 SLEEP
                             </button>
                         </div>
-                        <div className="stat">
-                            Hunger
-                            <span className="stat-value">{pet.hunger}</span>
-                        </div>
-                        <div className="stat">
-                            Happiness
-                            <span className="stat-value">{pet.happiness}</span>
-                        </div>
-                        <div className="stat">
-                            Energy
-                            <span className="stat-value">{pet.energy}</span>
-                        </div>
+                        <section className="stats-grid">
+                            <div className="stat-bar stat">
+                                <div className="stat-header">
+                                    <div className="stat-label">
+                                        <span className="stat-icon">🍽️</span>
+                                        <span className="stat-name">
+                                            Hunger
+                                        </span>
+                                    </div>
+                                    <span className="stat-value">
+                                        {pet.hunger}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="stat-bar stat">
+                                <div className="stat-header">
+                                    <div className="stat-label">
+                                        <span className="stat-icon">😊</span>
+                                        <span className="stat-name">
+                                            Happiness
+                                        </span>
+                                    </div>
+                                    <span className="stat-value">
+                                        {pet.happiness}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="stat-bar stat">
+                                <div className="stat-header">
+                                    <div className="stat-label">
+                                        <span className="stat-icon">⚡</span>
+                                        <span className="stat-name">
+                                            Energy
+                                        </span>
+                                    </div>
+                                    <span className="stat-value">
+                                        {pet.energy}
+                                    </span>
+                                </div>
+                            </div>
+                        </section>
                     </section>
                 )}
             </main>
